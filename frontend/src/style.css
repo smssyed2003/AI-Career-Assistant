@@ -363,3 +363,25 @@ button:disabled {
   padding-bottom: 0;
   border-bottom: none;
 }
+
+.prep-row {
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #1f2937;
+}
+
+.prep-row:last-child {
+  border-bottom: none;
+}
+
+.prep-row div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.prep-row span {
+  color: #93c5fd;
+  text-transform: capitalize;
+}

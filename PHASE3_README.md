@@ -1,84 +1,83 @@
-# AI Career Agent — Phase 3 Handoff
+# AI Career Agent - Phase 3 Handoff
 
-This document summarizes Phase 3 implementation work for the AI Career Agent project and provides a handoff guide for the next phase.
+This document summarizes the updated Phase 3 implementation for free-first, safe job discovery and JD handling.
 
 ## Phase 3 Completed Work
 
 ### 1. Job ingestion and parsing
 - Added backend support for ingesting raw job description text via `POST /api/jobs/ingest`.
-- Implemented an LLM-backed job description extractor that normalizes parsed fields into structured `JobDescription` data.
-- Supported `file` upload or raw `text` input for job ingestion.
+- Supported file upload or raw text input for JD ingestion.
+- Implemented structured JD extraction into `JobDescription` data.
+- Jobs are stored permanently in the database.
 
-### 2. Matching engine
-- Built the candidate-to-job matching service in `backend/app/services/match_service.py`.
-- Added endpoint `GET /api/jobs/match/{candidate_id}` to return ranked job matches for a candidate.
-- Returned matching scores plus contextual data to expose job fit.
+### 2. Free-first job discovery
+- Added safe source-aware job discovery through `POST /api/job-discovery/ingest`.
+- Supported source categories:
+  - manual
+  - company careers
+  - startup careers
+  - AI company careers
+  - RemoteOK
+  - Wellfound
+  - government jobs
+  - internship portals
+- Stored discovery source records in `job_sources`.
+- Added `GET /api/job-discovery/sources` to review discovery history.
 
-### 3. Skill gap analysis
-- Added endpoint `GET /api/jobs/{job_id}/skill-gap/{candidate_id}`.
-- Computes missing job skills and candidate strengths.
-- Supports enhanced career guidance by highlighting what to learn next.
+### 3. Duplicate handling
+- Added duplicate detection before storing discovered jobs.
+- Duplicate jobs are skipped but still recorded as source events.
+- This keeps the job database cleaner without needing paid APIs.
 
-### 4. Interview readiness scoring
-- Added endpoint `GET /api/jobs/{job_id}/readiness/{candidate_id}`.
-- Computes candidate readiness score, matched skills, missing skills, strengths, and recommended learning.
-- Integrated readiness evaluation into the React `/match` workspace.
+### 4. Matching engine
+- Built candidate-to-job matching through `backend/app/services/match_service.py`.
+- Added `GET /api/jobs/match/{candidate_id}` for ranked job matches.
+- Matching now includes:
+  - skill match
+  - experience match
+  - project match
+  - location match
+  - salary match
+  - education match
+  - keyword match
+  - overall match label
+  - interview probability label
 
-### 5. Dedicated frontend routing
-- Added React Router in the frontend to support a dedicated `/match` route.
-- Created `HomePage` and `MatchPage` components for separate pages.
-- Updated navigation to use a proper app route rather than a single static dashboard.
+### 5. Skill gap and readiness
+- Added `GET /api/jobs/{job_id}/skill-gap/{candidate_id}`.
+- Added `GET /api/jobs/{job_id}/readiness/{candidate_id}`.
+- These support missing skills, strengths, learning recommendations, and interview readiness scoring.
 
-### 5. Frontend usability improvements
-- Added candidate creation form, job ingestion textarea, and match list UI.
-- Styled route navigation and workspace panels.
-- Preserved health check experience on the home page.
+### 6. Frontend support
+- Extended the React `/match` workspace with a Discovery section.
+- Users can paste a job, choose a safe source, add source URL, and save it with dedupe/source tracking.
+- LLM queue status is shown in the workspace.
 
 ## Important Files Added/Updated
 
-- `frontend/src/App.tsx`
-- `frontend/src/main.tsx`
-- `frontend/src/pages/HomePage.tsx`
+- `backend/app/models/job_source.py`
+- `backend/app/schemas/discovery.py`
+- `backend/app/services/discovery_service.py`
+- `backend/app/services/job_service.py`
+- `backend/app/api/routers/discovery.py`
+- `backend/app/services/match_service.py`
+- `backend/app/api/routers/jobs.py`
 - `frontend/src/pages/MatchPage.tsx`
 - `frontend/src/style.css`
-- `frontend/package.json`
 - `PHASE3_README.md`
 
 ## API Endpoints
 
-- `GET /api/health`
-- `POST /api/candidates`
-- `GET /api/candidates`
-- `GET /api/candidates/{candidate_id}`
 - `POST /api/jobs/ingest`
 - `GET /api/jobs`
 - `GET /api/jobs/{job_id}`
+- `POST /api/job-discovery/ingest`
+- `GET /api/job-discovery/sources`
 - `GET /api/jobs/match/{candidate_id}`
 - `GET /api/jobs/{job_id}/skill-gap/{candidate_id}`
 - `GET /api/jobs/{job_id}/readiness/{candidate_id}`
+- `GET /api/llm/queue/status`
 
-## How to run Phase 3 locally
+## Free-First Constraint
 
-1. Install backend dependencies and start the backend:
-   ```powershell
-   cd backend
-   python -m pip install -r requirements.txt
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
-2. Install frontend dependencies and start the frontend:
-   ```powershell
-   cd frontend
-   npm install
-   npm run dev -- --host
-   ```
-3. Open the app in a browser and navigate to:
-   - `/` for the home page
-   - `/match` for the job matching workspace
-
-## Next phase recommendations
-
-- Add persistent candidate search and job discovery history.
-- Introduce saved profiles and job lists.
-- Add support for PDF/DOCX job description files in the frontend.
-- Expand matching engine with semantic similarity and vector search.
-- Add interview readiness scoring and learning pathway recommendations.
+Phase 3 intentionally avoids bot-based scraping and automated submissions on platforms like LinkedIn, Naukri, and Indeed. The MVP uses manual/public-source/company-career ingestion first, which is safer, cheaper, and easier to deploy on Render + Vercel.

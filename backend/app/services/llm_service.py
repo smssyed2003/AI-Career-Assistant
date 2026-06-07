@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 
 from app.core.config import settings
 from app.schemas.profile import CandidateProfile
+from app.services.llm_queue_service import llm_rate_limiter
 
 try:
     import google.generativeai as genai
@@ -27,6 +28,7 @@ class ProfileExtractor:
     def extract_profile(self, text: str) -> CandidateProfile:
         if settings.gemini_api_key and genai:
             try:
+                llm_rate_limiter.wait_for_slot()
                 genai.configure(api_key=settings.gemini_api_key)
                 response = genai.chat.completions.create(
                     model=settings.gemini_model,
@@ -44,6 +46,7 @@ class ProfileExtractor:
 
         if settings.openai_api_key and openai:
             try:
+                llm_rate_limiter.wait_for_slot()
                 openai.api_key = settings.openai_api_key
                 response = openai.ChatCompletion.create(
                     model=settings.openai_model,
@@ -125,6 +128,7 @@ class JobDescriptionExtractor:
     def extract_job(self, text: str) -> Dict[str, Any]:
         if settings.gemini_api_key and genai:
             try:
+                llm_rate_limiter.wait_for_slot()
                 genai.configure(api_key=settings.gemini_api_key)
                 response = genai.chat.completions.create(
                     model=settings.gemini_model,
@@ -142,6 +146,7 @@ class JobDescriptionExtractor:
 
         if settings.openai_api_key and openai:
             try:
+                llm_rate_limiter.wait_for_slot()
                 openai.api_key = settings.openai_api_key
                 response = openai.ChatCompletion.create(
                     model=settings.openai_model,

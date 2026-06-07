@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, Enum, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON, Enum, Boolean, ForeignKey
 from sqlalchemy.sql import func
 from enum import Enum as PyEnum
 

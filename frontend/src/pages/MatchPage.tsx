@@ -92,6 +92,34 @@ interface ApplicationPackageRead {
   status: string
 }
 
+interface InterviewPrepRead {
+  id: number
+  question_type: string
+  question_text: string
+  suggested_answer?: string
+  keyword_highlights: string[]
+  difficulty_level: string
+}
+
+interface CareerReportRead {
+  id: number
+  interview_rate?: number
+  ats_average?: number
+  new_skills: string[]
+  trending_jobs: string[]
+  resume_suggestions: string[]
+  certification_suggestions: string[]
+  salary_growth?: string
+  career_roadmap: string[]
+}
+
+interface LlmQueueStatus {
+  enabled: boolean
+  requests_per_minute: number
+  used_in_current_window: number
+  available_now: number
+}
+
 function MatchPage() {
   const [candidateForm, setCandidateForm] = useState({
     full_name: '',
@@ -108,6 +136,11 @@ function MatchPage() {
   const [readiness, setReadiness] = useState<ReadinessAnalysis | null>(null)
   const [resumeVersions, setResumeVersions] = useState<ResumeRead[]>([])
   const [applicationPackage, setApplicationPackage] = useState<ApplicationPackageRead | null>(null)
+  const [interviewQuestions, setInterviewQuestions] = useState<InterviewPrepRead[]>([])
+  const [careerReport, setCareerReport] = useState<CareerReportRead | null>(null)
+  const [llmQueueStatus, setLlmQueueStatus] = useState<LlmQueueStatus | null>(null)
+  const [discoverySource, setDiscoverySource] = useState('company_careers')
+  const [sourceUrl, setSourceUrl] = useState('')
   const [status, setStatus] = useState('Ready')
   const [statusType, setStatusType] = useState<'info' | 'success' | 'error'>('info')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -120,10 +153,13 @@ function MatchPage() {
   const sections = [
     { key: 'candidate', label: 'Candidate Profile', id: 'candidate-profile' },
     { key: 'job', label: 'Job Description', id: 'job-description' },
+    { key: 'discovery', label: 'Discovery', id: 'job-discovery' },
     { key: 'matches', label: 'Matches', id: 'matches' },
     { key: 'skill-gap', label: 'Skill Gap Analysis', id: 'skill-gap' },
     { key: 'readiness', label: 'Interview Readiness', id: 'interview-readiness' },
     { key: 'package', label: 'Application Package', id: 'application-package' },
+    { key: 'interview-prep', label: 'Interview Prep', id: 'interview-prep' },
+    { key: 'career-coach', label: 'Career Coach', id: 'career-coach' },
   ]
 
   const activeSection = searchParams.get('section') || ''
@@ -251,6 +287,8 @@ function MatchPage() {
       setFieldErrors((prev) => ({ ...prev, full_name: '', email: '', skills: '' }))
       setResumeVersions([])
       setApplicationPackage(null)
+      setInterviewQuestions([])
+      setCareerReport(null)
       setStatusType('success')
       setStatus(`Loaded saved candidate: ${saved.full_name}`)
     } else {
@@ -267,6 +305,7 @@ function MatchPage() {
       setJobText(saved.description)
       setFieldErrors((prev) => ({ ...prev, jobText: '' }))
       setApplicationPackage(null)
+      setInterviewQuestions([])
       setStatusType('success')
       setStatus(`Loaded saved job: ${saved.title}`)
     } else {
@@ -301,6 +340,8 @@ function MatchPage() {
       setReadiness(null)
       setResumeVersions([])
       setApplicationPackage(null)
+      setInterviewQuestions([])
+      setCareerReport(null)
       await loadSavedData()
     } catch (error) {
       setStatusType('error')
@@ -328,6 +369,7 @@ function MatchPage() {
       setSkillGap(null)
       setReadiness(null)
       setApplicationPackage(null)
+      setInterviewQuestions([])
       await loadSavedData()
       if (candidate) {
         fetchMatches(candidate.id)
@@ -438,8 +480,92 @@ function MatchPage() {
     }
   }
 
+  const handleDiscoverJob = async () => {
+    if (!validateJobText(jobText)) {
+      setStatusType('error')
+      setStatus('Add a valid job description before discovery ingest.')
+      return
+    }
+
+    try {
+      setStatusType('info')
+      setStatus('Saving discovered job with source tracking...')
+      const response = await axios.post('/api/job-discovery/ingest', {
+        source: discoverySource,
+        source_url: sourceUrl || null,
+        job_texts: [jobText],
+      })
+      const createdJobs = response.data.jobs || []
+      if (createdJobs.length > 0) {
+        setJob(createdJobs[0])
+        setStatus(`Discovered job saved. Duplicates skipped: ${response.data.duplicate_count}`)
+      } else {
+        setStatus(`Duplicate job skipped. Existing job ids: ${response.data.duplicate_job_ids.join(', ')}`)
+      }
+      setStatusType('success')
+      await loadSavedData()
+    } catch (error) {
+      setStatusType('error')
+      setStatus('Failed to save discovered job')
+      console.error(error)
+    }
+  }
+
+  const handleGenerateInterviewPrep = async () => {
+    if (!candidate || !job) {
+      setStatusType('error')
+      setStatus('Candidate and job are required to generate interview prep')
+      return
+    }
+
+    try {
+      setStatusType('info')
+      setStatus('Generating interview prep...')
+      const packageQuery = applicationPackage ? `?application_package_id=${applicationPackage.id}` : ''
+      const response = await axios.post<InterviewPrepRead[]>(`/api/jobs/${job.id}/interview-prep/${candidate.id}${packageQuery}`)
+      setInterviewQuestions(response.data)
+      setStatusType('success')
+      setStatus('Interview prep generated')
+    } catch (error) {
+      setStatusType('error')
+      setStatus('Failed to generate interview prep')
+      console.error(error)
+    }
+  }
+
+  const handleGenerateCareerReport = async () => {
+    if (!candidate) {
+      setStatusType('error')
+      setStatus('Select a candidate before generating a career report')
+      return
+    }
+
+    try {
+      setStatusType('info')
+      setStatus('Generating career coach report...')
+      const response = await axios.post<CareerReportRead>(`/api/candidates/${candidate.id}/career-reports/generate`)
+      setCareerReport(response.data)
+      setStatusType('success')
+      setStatus('Career coach report generated')
+    } catch (error) {
+      setStatusType('error')
+      setStatus('Failed to generate career report')
+      console.error(error)
+    }
+  }
+
+  const loadLlmQueueStatus = async () => {
+    try {
+      const response = await axios.get<LlmQueueStatus>('/api/llm/queue/status')
+      setLlmQueueStatus(response.data)
+    } catch (error) {
+      console.error('Failed to load LLM queue status', error)
+    }
+  }
+
   useEffect(() => {
     loadSavedData()
+    loadLlmQueueStatus()
   }, [])
 
   const isCandidateFormValid =
@@ -607,6 +733,43 @@ function MatchPage() {
         )}
       </section>
 
+      <section id="job-discovery" className="panel">
+        <h3>Discovery</h3>
+        <div className="field-grid">
+          <label>
+            Source
+            <select value={discoverySource} onChange={(event) => setDiscoverySource(event.target.value)}>
+              <option value="company_careers">Company Careers</option>
+              <option value="startup_careers">Startup Careers</option>
+              <option value="ai_company_careers">AI Company Careers</option>
+              <option value="remote_ok">RemoteOK</option>
+              <option value="wellfound">Wellfound</option>
+              <option value="government_jobs">Government Jobs</option>
+              <option value="internship_portals">Internship Portals</option>
+              <option value="manual">Manual</option>
+            </select>
+          </label>
+          <label>
+            Source URL
+            <input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} />
+          </label>
+        </div>
+        <button disabled={!isJobTextValid} onClick={handleDiscoverJob}>
+          Save Discovered Job
+        </button>
+        {llmQueueStatus && (
+          <div className="result-card">
+            <h4>LLM Queue</h4>
+            <p>
+              Limit: <strong>{llmQueueStatus.requests_per_minute}/minute</strong>
+            </p>
+            <p>
+              Available now: <strong>{llmQueueStatus.available_now}</strong>
+            </p>
+          </div>
+        )}
+      </section>
+
       <section id="matches" className="panel">
         <div className="panel-heading">
           <h3>Matches</h3>
@@ -737,6 +900,73 @@ function MatchPage() {
           </div>
         ) : (
           <p>Prepare a review-ready package after selecting a candidate and job.</p>
+        )}
+      </section>
+
+      <section id="interview-prep" className="panel">
+        <div className="panel-heading">
+          <h3>Interview Prep</h3>
+          <button disabled={!candidate || !job} onClick={handleGenerateInterviewPrep}>
+            Generate Questions
+          </button>
+        </div>
+        {interviewQuestions.length > 0 ? (
+          <div className="list-card">
+            {interviewQuestions.map((question) => (
+              <div key={question.id} className="prep-row">
+                <div>
+                  <strong>{question.question_type.replace('_', ' ')}</strong>
+                  <span>{question.difficulty_level}</span>
+                </div>
+                <p>{question.question_text}</p>
+                {question.suggested_answer && <p>{question.suggested_answer}</p>}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>Generate likely interview questions after selecting a candidate and job.</p>
+        )}
+      </section>
+
+      <section id="career-coach" className="panel">
+        <div className="panel-heading">
+          <h3>Career Coach</h3>
+          <button disabled={!candidate} onClick={handleGenerateCareerReport}>
+            Generate Report
+          </button>
+        </div>
+        {careerReport ? (
+          <div className="result-card">
+            <div className="score-grid">
+              <div>
+                <span>Interview Rate</span>
+                <strong>{careerReport.interview_rate ?? 0}%</strong>
+              </div>
+              <div>
+                <span>ATS Average</span>
+                <strong>{careerReport.ats_average ?? 0}%</strong>
+              </div>
+            </div>
+            <h4>New Skills</h4>
+            <p>{careerReport.new_skills.join(', ') || 'No urgent gaps found'}</p>
+            <h4>Trending Jobs</h4>
+            <p>{careerReport.trending_jobs.join(', ') || 'Add more jobs to see trends'}</p>
+            <h4>Resume Suggestions</h4>
+            <ul>
+              {careerReport.resume_suggestions.map((suggestion) => (
+                <li key={suggestion}>{suggestion}</li>
+              ))}
+            </ul>
+            <h4>Career Roadmap</h4>
+            <ul>
+              {careerReport.career_roadmap.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ul>
+            {careerReport.salary_growth && <p>{careerReport.salary_growth}</p>}
+          </div>
+        ) : (
+          <p>Generate a simple weekly-style career report for the selected candidate.</p>
         )}
       </section>
     </div>

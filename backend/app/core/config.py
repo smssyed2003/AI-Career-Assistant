@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     gemini_model: str = "gemma-4-26b"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    llm_queue_enabled: bool = True
+    llm_requests_per_minute: int = 12
+    llm_max_retries: int = 3
     sentry_dsn: str = ""
 
     @property

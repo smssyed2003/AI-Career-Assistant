@@ -33,6 +33,9 @@ app.include_router(routers.ingestion.router, prefix="/api")
 app.include_router(routers.jobs.router, prefix="/api")
 app.include_router(routers.resumes.router, prefix="/api")
 app.include_router(routers.applications.router, prefix="/api")
+app.include_router(routers.discovery.router, prefix="/api")
+app.include_router(routers.interviews.router, prefix="/api")
+app.include_router(routers.career.router, prefix="/api")
 
 @app.get("/", summary="Root endpoint")
 def root():

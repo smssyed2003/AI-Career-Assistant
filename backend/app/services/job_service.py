@@ -1,3 +1,5 @@
+import re
+
 from sqlalchemy.orm import Session
 from app.models.job_description import JobDescription
 
@@ -15,3 +17,17 @@ class JobService:
         db.commit()
         db.refresh(job)
         return job
+
+    def find_duplicate(self, db: Session, raw_text: str):
+        fingerprint = self._fingerprint(raw_text)
+        if not fingerprint:
+            return None
+        for job in db.query(JobDescription).all():
+            existing = self._fingerprint(job.raw_text or job.description or "")
+            if existing == fingerprint:
+                return job
+        return None
+
+    def _fingerprint(self, text: str) -> str:
+        normalized = re.sub(r"[^a-z0-9]+", " ", (text or "").lower())
+        return " ".join(normalized.split())[:600]
