@@ -1,0 +1,144 @@
+{
+  "name": "AI Career Agent - Email Intake Profile Build",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-hourly",
+      "name": "Hourly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/ingest/gmail/sync",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "has:attachment newer_than:1d"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "sync-gmail-resumes",
+      "name": "Sync Gmail Resume Attachments",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 280]
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = Array.isArray($json) ? $json : [];\nreturn results\n  .filter((item) => item.profile && item.profile.email && item.profile.full_name)\n  .map((item) => ({\n    json: {\n      full_name: item.profile.full_name,\n      email: item.profile.email,\n      phone: item.profile.phone || null,\n      summary: item.profile.summary || null,\n      education: item.profile.education || [],\n      experience: item.profile.experience || [],\n      projects: item.profile.projects || [],\n      skills: item.profile.skills || [],\n      certifications: item.profile.certifications || [],\n      links: item.profile.links || [],\n      preferences: item.profile.preferences || null,\n      extra_metadata: {\n        intake_source: item.source || 'gmail',\n        file_name: item.file_name,\n        file_type: item.file_type\n      }\n    }\n  }));"
+      },
+      "id": "map-profiles",
+      "name": "Map Extracted Profiles",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/candidates",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "create-candidate",
+      "name": "Create Candidate Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/candidates/{{$json.id}}/resumes/generate",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "generate-resumes",
+      "name": "Generate Resume Versions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 280]
+    }
+  ],
+  "connections": {
+    "Hourly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Sync Gmail Resume Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Gmail Resume Attachments": {
+      "main": [
+        [
+          {
+            "node": "Map Extracted Profiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Extracted Profiles": {
+      "main": [
+        [
+          {
+            "node": "Create Candidate Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Candidate Profile": {
+      "main": [
+        [
+          {
+            "node": "Generate Resume Versions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

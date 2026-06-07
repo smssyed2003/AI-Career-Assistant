@@ -1,0 +1,72 @@
+{
+  "name": "AI Career Agent - Job Discovery Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "job-discovery",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "job-discovery-webhook",
+      "name": "Job Discovery Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 280],
+      "webhookId": "ai-career-agent-job-discovery"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst jobTexts = Array.isArray(body.job_texts) ? body.job_texts : [body.job_text || body.text || ''];\nreturn [{\n  json: {\n    source: body.source || 'manual',\n    source_url: body.source_url || null,\n    job_texts: jobTexts.filter((text) => String(text).trim().length > 0)\n  }\n}];"
+      },
+      "id": "normalize-payload",
+      "name": "Normalize Discovery Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/job-discovery/ingest",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "ingest-discovered-jobs",
+      "name": "Ingest Discovered Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 280]
+    }
+  ],
+  "connections": {
+    "Job Discovery Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Discovery Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Discovery Payload": {
+      "main": [
+        [
+          {
+            "node": "Ingest Discovered Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

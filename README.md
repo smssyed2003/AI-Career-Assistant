@@ -31,11 +31,19 @@ The backend now includes:
    ```powershell
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
+   From the project root, you can also run:
+   ```powershell
+   .\run-backend.ps1
+   ```
 4. Start the frontend:
    ```powershell
    cd frontend
    npm install
    npm run dev -- --host
+   ```
+   From the project root, you can also run:
+   ```powershell
+   .\run-frontend.ps1
    ```
 
 ## Project Scope
