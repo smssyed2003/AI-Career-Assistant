@@ -57,7 +57,20 @@ class CandidateCreate(CandidateBase):
     pass
 
 
-from pydantic import ConfigDict
+class CandidateUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    summary: Optional[str] = None
+    education: Optional[List[EducationEntry]] = None
+    experience: Optional[List[ExperienceEntry]] = None
+    projects: Optional[List[ProjectEntry]] = None
+    skills: Optional[List[str]] = None
+    certifications: Optional[List[str]] = None
+    links: Optional[List[HttpUrl]] = None
+    preferences: Optional[CandidatePreferences] = None
+    extra_metadata: Optional[Dict[str, Any]] = None
+
 
 class CandidateRead(CandidateBase):
     id: int

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.candidate import Candidate
-from app.schemas.candidate import CandidateCreate
+from app.schemas.candidate import CandidateCreate, CandidateUpdate
 
 
 class CandidateService:
@@ -28,6 +28,14 @@ class CandidateService:
             payload["user_id"] = user_id
         candidate = Candidate(**payload)
         db.add(candidate)
+        db.commit()
+        db.refresh(candidate)
+        return candidate
+
+    def update(self, db: Session, candidate: Candidate, candidate_in: CandidateUpdate):
+        payload = candidate_in.model_dump(exclude_unset=True)
+        for key, value in payload.items():
+            setattr(candidate, key, value)
         db.commit()
         db.refresh(candidate)
         return candidate

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.schemas.candidate import CandidateCreate, CandidateRead
+from app.schemas.candidate import CandidateCreate, CandidateRead, CandidateUpdate
 from app.db.session import get_db
 from app.services.candidate_service import CandidateService
 
@@ -41,3 +41,20 @@ def get_candidate(
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
     return candidate
+
+
+@router.patch("/candidates/{candidate_id}", response_model=CandidateRead, summary="Update a candidate profile")
+def update_candidate(
+    candidate_id: int,
+    candidate_in: CandidateUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    candidate = service.get_for_user(db, candidate_id, current_user.id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    if candidate_in.email and candidate_in.email != candidate.email:
+        existing = service.get_by_email_for_user(db, candidate_in.email, current_user.id)
+        if existing and existing.id != candidate.id:
+            raise HTTPException(status_code=400, detail="Candidate email already exists")
+    return service.update(db, candidate, candidate_in)

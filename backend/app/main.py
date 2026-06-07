@@ -6,6 +6,7 @@ from app.api import routers
 from app.core.config import settings
 from app.db.session import engine
 from app.db.base import Base
+from app.models import audit_log, resume_upload, system_setting
 
 # Create data directory if it doesn't exist
 data_dir = Path("data")

@@ -8,7 +8,7 @@ from fastapi import HTTPException, UploadFile
 
 
 class ResumeParser:
-    SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
+    SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt"}
 
     def extract_text(self, file: UploadFile) -> str:
         file_extension = Path(file.filename).suffix.lower()
@@ -23,6 +23,8 @@ class ResumeParser:
             return self._extract_pdf(content)
         if file_extension == ".docx":
             return self._extract_docx(content)
+        if file_extension == ".txt":
+            return content.decode("utf-8", errors="ignore")
 
         raise HTTPException(status_code=400, detail="Unsupported resume format")
 

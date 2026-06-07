@@ -7,19 +7,23 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_admin
 from app.db.session import get_db
 from app.models.application import ApplicationPackage
+from app.models.audit_log import AuditLog
 from app.models.candidate import Candidate
 from app.models.job_description import JobDescription
 from app.models.resume import Resume
 from app.models.user import User
 from app.schemas.admin import AdminAnalyticsRead, AdminSettingsRead, SystemSettingRead, SystemSettingUpdate
+from app.schemas.audit import AuditLogRead
 from app.schemas.auth import UserAdminRead, UserRoleUpdate, UserStatusUpdate
+from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
-from app.services.llm_queue_service import llm_queue
+from app.services.llm_queue_service import llm_rate_limiter
 from app.services.system_setting_service import SystemSettingService
 
 router = APIRouter()
 service = AuthService()
 settings_service = SystemSettingService()
+audit_service = AuditService()
 
 
 @router.get("/admin/users", response_model=List[UserAdminRead], summary="List users")
@@ -49,10 +53,11 @@ def admin_analytics(db: Session = Depends(get_db), _: User = Depends(get_current
         jobs=db.query(JobDescription).count(),
         resumes=db.query(Resume).count(),
         application_packages=db.query(ApplicationPackage).count(),
+        audit_log_count=db.query(AuditLog).count(),
         application_status_counts=status_counts,
         system_health={
             "database": "connected",
-            "llm_queue": llm_queue.status(),
+            "llm_queue": llm_rate_limiter.status(),
             "safe_application_mode": "manual_review_only",
             "auto_apply_enabled": False,
         },
@@ -84,7 +89,25 @@ def update_setting(
     )
     if not setting:
         raise HTTPException(status_code=404, detail="Setting not found")
+    audit_service.log(
+        db,
+        actor_user_id=current_admin.id,
+        action="admin.setting.updated",
+        target_type="system_setting",
+        target_id=setting.key,
+        details={"key": setting.key, "category": setting.category},
+    )
     return setting
+
+
+@router.get("/admin/audit-logs", response_model=List[AuditLogRead], summary="List admin audit logs")
+def list_audit_logs(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_admin),
+):
+    return audit_service.list(db, skip=skip, limit=limit)
 
 
 @router.patch("/admin/users/{user_id}/role", response_model=UserAdminRead, summary="Update user role")
@@ -99,6 +122,14 @@ def update_user_role(
     user = service.update_role(db, user_id, payload.role)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    audit_service.log(
+        db,
+        actor_user_id=current_admin.id,
+        action="admin.user.role_updated",
+        target_type="user",
+        target_id=user.id,
+        details={"email": user.email, "role": user.role},
+    )
     return user
 
 
@@ -114,4 +145,12 @@ def update_user_status(
     user = service.update_status(db, user_id, payload.is_active)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    audit_service.log(
+        db,
+        actor_user_id=current_admin.id,
+        action="admin.user.status_updated",
+        target_type="user",
+        target_id=user.id,
+        details={"email": user.email, "is_active": user.is_active},
+    )
     return user

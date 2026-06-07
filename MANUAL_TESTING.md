@@ -45,10 +45,23 @@ Expected result: dashboard loads without exposing another user's data.
 
 1. Open `Job Matching`.
 2. Create a candidate profile with name, email, summary, and comma-separated skills.
-3. Click `Generate Resume Versions`.
-4. Confirm multiple versions appear, such as master, ATS, AI, ML, Python, Backend, and Data Scientist.
+3. Open `Profile`.
+4. Edit summary, skills, certifications, or links.
+5. Save and confirm the edited profile remains after refresh.
+6. Open `Job Matching` again and click `Generate Resume Versions`.
+7. Confirm multiple versions appear, such as master, ATS, AI, ML, Python, Backend, and Data Scientist.
 
 Expected result: generated versions are stored and previous versions are not overwritten.
+
+## 4A. Resume Upload History
+
+1. Open `Resumes`.
+2. Select a candidate.
+3. Upload a `.pdf`, `.docx`, or `.txt` resume.
+4. Confirm it appears under `Upload History`.
+5. Click the upload row and confirm extracted text appears in preview.
+
+Expected result: resume upload history is stored in the database, not on the backend filesystem.
 
 ## 5. Job Ingestion And Matching
 
@@ -65,9 +78,11 @@ Expected result: the job is parsed, scored, and searchable for the logged-in use
 1. In `Application Package`, click `Prepare Package`.
 2. Confirm cover letter, HR intro, email template, screening answers, match score, ATS score, and interview probability appear.
 3. Open `Applications`.
-4. Change status from `prepared` to `submitted`.
-5. Add private notes and click `Save Notes`.
-6. Move the status to `under_review`, `interview_scheduled`, `rejected`, `accepted`, or `archived`.
+4. Filter by status.
+5. Click `View Details` and confirm generated materials appear.
+6. Change status from `prepared` to `submitted`.
+7. Add private notes and click `Save Notes`.
+8. Move the status to `under_review`, `interview_scheduled`, `rejected`, `accepted`, or `archived`.
 
 Expected result: tracking is manual and no job-site auto-apply action happens.
 
@@ -89,6 +104,7 @@ Expected result: the candidate can prepare for interviews immediately after a st
 4. Confirm `System Health` shows database, manual application mode, and LLM queue availability.
 5. Update a prompt or n8n webhook setting.
 6. Refresh the page and confirm the setting is still saved.
+7. Confirm the `Audit Log` section records admin setting, role, and status changes.
 
 Expected result: admin can manage prompts/integrations without enabling payment, recruiter portals, or risky auto-apply bots.
 

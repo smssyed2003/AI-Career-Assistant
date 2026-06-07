@@ -13,6 +13,7 @@ class AdminAnalyticsRead(BaseModel):
     jobs: int = 0
     resumes: int = 0
     application_packages: int = 0
+    audit_log_count: int = 0
     application_status_counts: Dict[str, int] = Field(default_factory=dict)
     system_health: Dict[str, Any] = Field(default_factory=dict)
 

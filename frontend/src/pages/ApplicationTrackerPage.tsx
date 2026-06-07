@@ -24,6 +24,10 @@ interface ApplicationPackageRead {
   notes?: string | null
   applied_date?: string | null
   created_at: string
+  cover_letter?: string | null
+  hr_introduction?: string | null
+  email_template?: string | null
+  screening_answers?: Record<string, string> | null
 }
 
 const applicationStatuses = [
@@ -42,9 +46,15 @@ function ApplicationTrackerPage() {
   const [jobs, setJobs] = useState<JobRead[]>([])
   const [status, setStatus] = useState('Loading applications...')
   const [notesDraft, setNotesDraft] = useState<Record<number, string>>({})
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedApplication, setSelectedApplication] = useState<ApplicationPackageRead | null>(null)
 
   const candidateById = useMemo(() => new Map(candidates.map((candidate) => [candidate.id, candidate])), [candidates])
   const jobById = useMemo(() => new Map(jobs.map((job) => [job.id, job])), [jobs])
+  const filteredApplications = useMemo(
+    () => applications.filter((application) => statusFilter === 'all' || application.status === statusFilter),
+    [applications, statusFilter]
+  )
 
   const loadData = async () => {
     try {
@@ -98,11 +108,22 @@ function ApplicationTrackerPage() {
           <h2>Application Tracker</h2>
           <p>{status}</p>
         </div>
+        <label className="compact-label">
+          Status
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <option value="all">All</option>
+            {applicationStatuses.map((item) => (
+              <option key={item} value={item}>
+                {item.replace(/_/g, ' ')}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
-      {applications.length > 0 ? (
+      {filteredApplications.length > 0 ? (
         <div className="tracker-list">
-          {applications.map((application) => {
+          {filteredApplications.map((application) => {
             const candidate = candidateById.get(application.candidate_id)
             const job = jobById.get(application.job_id)
             return (
@@ -134,13 +155,41 @@ function ApplicationTrackerPage() {
                   <button onClick={() => updateApplication(application.id, { notes: notesDraft[application.id] || '' })}>
                     Save Notes
                   </button>
+                  <button onClick={() => setSelectedApplication(application)}>View Details</button>
                 </div>
               </div>
             )
           })}
         </div>
       ) : (
-        <p>Prepare an application package from Job Matching to start tracking.</p>
+        <p>Prepare an application package from Job Matching to start tracking, or change the filter.</p>
+      )}
+
+      {selectedApplication && (
+        <div className="result-card">
+          <div className="panel-heading">
+            <h3>Application Detail</h3>
+            <button onClick={() => setSelectedApplication(null)}>Close</button>
+          </div>
+          <h4>HR Introduction</h4>
+          <p>{selectedApplication.hr_introduction || 'Not generated'}</p>
+          <h4>Cover Letter</h4>
+          <pre>{selectedApplication.cover_letter || 'Not generated'}</pre>
+          <h4>Email Template</h4>
+          <pre>{selectedApplication.email_template || 'Not generated'}</pre>
+          {selectedApplication.screening_answers && (
+            <>
+              <h4>Screening Answers</h4>
+              {Object.entries(selectedApplication.screening_answers).map(([question, answer]) => (
+                <p key={question}>
+                  <strong>{question}</strong>
+                  <br />
+                  {answer}
+                </p>
+              ))}
+            </>
+          )}
+        </div>
       )}
     </section>
   )

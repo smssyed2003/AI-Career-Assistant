@@ -19,6 +19,7 @@ interface AdminAnalytics {
   jobs: number
   resumes: number
   application_packages: number
+  audit_log_count: number
   application_status_counts: Record<string, number>
   system_health: {
     database?: string
@@ -40,23 +41,36 @@ interface SystemSetting {
   description?: string
 }
 
+interface AuditLog {
+  id: number
+  actor_user_id?: number | null
+  action: string
+  target_type: string
+  target_id?: string | null
+  details: Record<string, unknown>
+  created_at: string
+}
+
 function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null)
   const [settings, setSettings] = useState<SystemSetting[]>([])
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [settingDrafts, setSettingDrafts] = useState<Record<string, string>>({})
   const [status, setStatus] = useState('Loading users...')
 
   const loadAdminData = async () => {
     try {
-      const [userResponse, analyticsResponse, settingsResponse] = await Promise.all([
+      const [userResponse, analyticsResponse, settingsResponse, auditResponse] = await Promise.all([
         axios.get<AdminUser[]>('/api/admin/users'),
         axios.get<AdminAnalytics>('/api/admin/analytics'),
         axios.get<{ settings: SystemSetting[] }>('/api/admin/settings'),
+        axios.get<AuditLog[]>('/api/admin/audit-logs'),
       ])
       setUsers(userResponse.data)
       setAnalytics(analyticsResponse.data)
       setSettings(settingsResponse.data.settings)
+      setAuditLogs(auditResponse.data)
       setSettingDrafts(
         Object.fromEntries(settingsResponse.data.settings.map((setting) => [setting.key, stringifySetting(setting.value)]))
       )
@@ -125,6 +139,10 @@ function AdminPage() {
             <div className="metric-card">
               <span>Applications</span>
               <strong>{analytics.application_packages}</strong>
+            </div>
+            <div className="metric-card">
+              <span>Audit Logs</span>
+              <strong>{analytics.audit_log_count}</strong>
             </div>
             <div className="metric-card">
               <span>LLM RPM</span>
@@ -203,6 +221,29 @@ function AdminPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="panel">
+        <h3>Audit Log</h3>
+        {auditLogs.length > 0 ? (
+          <div className="audit-list">
+            {auditLogs.map((entry) => (
+              <div key={entry.id} className="audit-row">
+                <div>
+                  <strong>{entry.action}</strong>
+                  <span>{new Date(entry.created_at).toLocaleString()}</span>
+                </div>
+                <p>
+                  {entry.target_type}
+                  {entry.target_id ? ` #${entry.target_id}` : ''}
+                </p>
+                <pre>{JSON.stringify(entry.details, null, 2)}</pre>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No admin actions recorded yet.</p>
+        )}
       </section>
     </div>
   )

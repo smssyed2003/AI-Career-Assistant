@@ -5,6 +5,8 @@ import CandidateDashboardPage from './pages/CandidateDashboardPage'
 import MatchPage from './pages/MatchPage'
 import AdminPage from './pages/AdminPage'
 import ApplicationTrackerPage from './pages/ApplicationTrackerPage'
+import ProfilePage from './pages/ProfilePage'
+import ResumeLibraryPage from './pages/ResumeLibraryPage'
 
 interface AuthUser {
   id: number
@@ -113,6 +115,12 @@ function App() {
             <NavLink to="/match" className={({ isActive }) => (isActive ? 'nav-link active-link' : 'nav-link')}>
               Job Matching
             </NavLink>
+            <NavLink to="/profile" className={({ isActive }) => (isActive ? 'nav-link active-link' : 'nav-link')}>
+              Profile
+            </NavLink>
+            <NavLink to="/resumes" className={({ isActive }) => (isActive ? 'nav-link active-link' : 'nav-link')}>
+              Resumes
+            </NavLink>
             <NavLink to="/applications" className={({ isActive }) => (isActive ? 'nav-link active-link' : 'nav-link')}>
               Applications
             </NavLink>
@@ -177,6 +185,8 @@ function App() {
             <Routes>
               <Route path="/" element={<CandidateDashboardPage />} />
               <Route path="/match" element={<MatchPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/resumes" element={<ResumeLibraryPage />} />
               <Route path="/applications" element={<ApplicationTrackerPage />} />
               {authUser.role === 'admin' && <Route path="/admin" element={<AdminPage />} />}
             </Routes>

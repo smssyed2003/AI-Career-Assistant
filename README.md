@@ -19,6 +19,7 @@ The backend now includes:
 - Phase 4 adds interview readiness scoring, top strengths, improvement areas, and recommended learning guidance
 - Phase 5 adds saved candidate/job history, profile selection, and stronger frontend validation feedback
 - Candidate dashboard, manual application tracker, admin analytics, and admin-managed prompts/integration settings are included.
+- Candidate profile editing, database-backed resume upload history, resume library previews, tracker filters/details, and admin audit logs are included.
 
 ## Getting Started
 
@@ -55,9 +56,14 @@ This repo will incrementally implement:
 - User signup/login and per-user data isolation
 - Admin-only user management with role and status controls
 - Candidate dashboard with profile completion, workflow counters, application pipeline counts, and next actions
+- Candidate profile editing for summary, skills, certifications, and links
+- Resume upload history stored as parsed database records for the free deployment path
+- Resume library page for generated versions and uploaded resume previews
 - Manual application tracker with prepared, submitted, review, interview, rejected, accepted, and archived statuses
+- Application tracker filters and package detail preview
 - Admin analytics for users, profiles, jobs, resumes, applications, LLM queue status, and safe manual application mode
 - Admin-managed prompts and integration settings for n8n, AI prompts, and operational configuration
+- Admin audit logs for role, status, and setting changes
 - Gmail resume ingestion and parsing
 - LLM profile extraction into structured JSON
 - Candidate master database and resume generation
@@ -69,3 +75,5 @@ This repo will incrementally implement:
 ## Manual Testing
 
 Use `MANUAL_TESTING.md` as the product checklist before deployment or after larger feature groups. It covers authentication, role restrictions, candidate dashboard, resume generation, matching, application tracking, interview prep, career coaching, admin settings, and multi-user isolation.
+
+Use `DEPLOYMENT_CHECKLIST.md` before deploying the free MVP on Vercel and Render.
