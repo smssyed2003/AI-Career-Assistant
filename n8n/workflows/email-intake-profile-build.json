@@ -22,6 +22,15 @@
       "parameters": {
         "method": "POST",
         "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/ingest/gmail/sync",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.BACKEND_API_TOKEN}}"
+            }
+          ]
+        },
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -55,6 +64,15 @@
       "parameters": {
         "method": "POST",
         "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/candidates",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.BACKEND_API_TOKEN}}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{$json}}",
@@ -76,6 +94,15 @@
       "parameters": {
         "method": "POST",
         "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/candidates/{{$json.id}}/resumes/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.BACKEND_API_TOKEN}}"
+            }
+          ]
+        },
         "options": {
           "response": {
             "response": {

@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     llm_queue_enabled: bool = True
     llm_requests_per_minute: int = 12
     llm_max_retries: int = 3
+    auth_secret_key: str = "change-this-secret-before-deploying"
+    auth_token_expire_minutes: int = 1440
     sentry_dsn: str = ""
 
     @property

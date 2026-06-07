@@ -22,6 +22,7 @@ The backend now includes:
 ## Getting Started
 
 1. Copy `.env.example` to `backend/.env` and configure values.
+   Set a strong `AUTH_SECRET_KEY` before sharing the app with other users.
 2. Install backend dependencies:
    ```powershell
    cd backend
@@ -49,6 +50,7 @@ The backend now includes:
 ## Project Scope
 
 This repo will incrementally implement:
+- User signup/login and per-user data isolation
 - Gmail resume ingestion and parsing
 - LLM profile extraction into structured JSON
 - Candidate master database and resume generation

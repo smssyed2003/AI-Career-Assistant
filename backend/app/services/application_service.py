@@ -18,30 +18,36 @@ class ApplicationService:
         self.matcher = MatchService()
         self.resumes = ResumeService()
 
-    def list(self, db: Session, candidate_id: int | None = None, job_id: int | None = None):
+    def list(self, db: Session, candidate_id: int | None = None, job_id: int | None = None, user_id: int | None = None):
         query = db.query(ApplicationPackage)
+        if user_id is not None:
+            query = query.filter(ApplicationPackage.user_id == user_id)
         if candidate_id is not None:
             query = query.filter(ApplicationPackage.candidate_id == candidate_id)
         if job_id is not None:
             query = query.filter(ApplicationPackage.job_id == job_id)
         return query.order_by(ApplicationPackage.created_at.desc(), ApplicationPackage.id.desc()).all()
 
-    def get(self, db: Session, package_id: int):
-        return db.query(ApplicationPackage).filter(ApplicationPackage.id == package_id).first()
+    def get(self, db: Session, package_id: int, user_id: int | None = None):
+        query = db.query(ApplicationPackage).filter(ApplicationPackage.id == package_id)
+        if user_id is not None:
+            query = query.filter(ApplicationPackage.user_id == user_id)
+        return query.first()
 
-    def prepare(self, db: Session, candidate_id: int, job_id: int):
-        candidate = self.candidates.get(db, candidate_id)
-        job = self.jobs.get(db, job_id)
+    def prepare(self, db: Session, candidate_id: int, job_id: int, user_id: int | None = None):
+        candidate = self.candidates.get_for_user(db, candidate_id, user_id) if user_id is not None else self.candidates.get(db, candidate_id)
+        job = self.jobs.get_for_user(db, job_id, user_id) if user_id is not None else self.jobs.get(db, job_id)
         if not candidate or not job:
             raise ValueError("Candidate or job not found")
 
         match = self.matcher.score_candidate_job(candidate, job)
-        readiness = self.matcher.analyze_interview_readiness(db, candidate_id, job_id)
+        readiness = self.matcher.analyze_interview_readiness(db, candidate_id, job_id, user_id=user_id)
         match_percent = self._percent(match.score)
         ats_score = self.resumes.estimate_ats_score(candidate, self.resumes.DEFAULT_TYPES[1], job)
         optimized_resume = self.resumes.generate_for_job(db, candidate, job, ats_score=ats_score)
 
         package = ApplicationPackage(
+            user_id=user_id,
             candidate_id=candidate.id,
             job_id=job.id,
             match_score=match_percent,

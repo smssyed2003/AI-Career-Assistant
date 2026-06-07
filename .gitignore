@@ -9,6 +9,8 @@ venv/
 *.env
 !.env.example
 backend/data/
+backend/app/tests/
+local_tests/
 
 # Node
 node_modules/

@@ -21,3 +21,7 @@ services:
         value: "12"
       - key: LLM_MAX_RETRIES
         value: "3"
+      - key: AUTH_SECRET_KEY
+        value: change-this-secret-before-deploying
+      - key: AUTH_TOKEN_EXPIRE_MINUTES
+        value: "1440"

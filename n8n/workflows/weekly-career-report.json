@@ -22,6 +22,15 @@
     {
       "parameters": {
         "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/candidates",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.BACKEND_API_TOKEN}}"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "list-candidates",
@@ -44,6 +53,15 @@
       "parameters": {
         "method": "POST",
         "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/candidates/{{$json.id}}/career-reports/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.BACKEND_API_TOKEN}}"
+            }
+          ]
+        },
         "options": {
           "response": {
             "response": {

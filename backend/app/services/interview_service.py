@@ -12,21 +12,23 @@ class InterviewService:
         self.jobs = JobService()
         self.matcher = MatchService()
 
-    def list_for_job(self, db: Session, candidate_id: int, job_id: int):
+    def list_for_job(self, db: Session, candidate_id: int, job_id: int, user_id: int | None = None):
+        query = db.query(InterviewPrep).filter(InterviewPrep.candidate_id == candidate_id, InterviewPrep.job_id == job_id)
+        if user_id is not None:
+            query = query.filter(InterviewPrep.user_id == user_id)
         return (
-            db.query(InterviewPrep)
-            .filter(InterviewPrep.candidate_id == candidate_id, InterviewPrep.job_id == job_id)
+            query
             .order_by(InterviewPrep.question_type, InterviewPrep.id)
             .all()
         )
 
-    def generate(self, db: Session, candidate_id: int, job_id: int, application_package_id: int | None = None):
-        candidate = self.candidates.get(db, candidate_id)
-        job = self.jobs.get(db, job_id)
+    def generate(self, db: Session, candidate_id: int, job_id: int, application_package_id: int | None = None, user_id: int | None = None):
+        candidate = self.candidates.get_for_user(db, candidate_id, user_id) if user_id is not None else self.candidates.get(db, candidate_id)
+        job = self.jobs.get_for_user(db, job_id, user_id) if user_id is not None else self.jobs.get(db, job_id)
         if not candidate or not job:
             raise ValueError("Candidate or job not found")
 
-        existing = self.list_for_job(db, candidate_id, job_id)
+        existing = self.list_for_job(db, candidate_id, job_id, user_id=user_id)
         if existing:
             return existing
 
@@ -60,6 +62,7 @@ class InterviewService:
         for question_type, question_text, highlights, difficulty in questions:
             prep = InterviewPrep(
                 candidate_id=candidate_id,
+                user_id=user_id,
                 job_id=job_id,
                 application_package_id=application_package_id,
                 question_type=question_type,

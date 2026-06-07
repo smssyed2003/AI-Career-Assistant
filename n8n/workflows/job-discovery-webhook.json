@@ -29,6 +29,15 @@
       "parameters": {
         "method": "POST",
         "url": "={{$env.BACKEND_API_URL || 'http://backend:8000/api'}}/job-discovery/ingest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.BACKEND_API_TOKEN}}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{$json}}",

@@ -12,21 +12,28 @@ class CareerService:
     def __init__(self):
         self.candidates = CandidateService()
 
-    def list_reports(self, db: Session, candidate_id: int):
+    def list_reports(self, db: Session, candidate_id: int, user_id: int | None = None):
+        query = db.query(CareerReport).filter(CareerReport.candidate_id == candidate_id)
+        if user_id is not None:
+            query = query.filter(CareerReport.user_id == user_id)
         return (
-            db.query(CareerReport)
-            .filter(CareerReport.candidate_id == candidate_id)
+            query
             .order_by(CareerReport.created_at.desc(), CareerReport.id.desc())
             .all()
         )
 
-    def generate(self, db: Session, candidate_id: int):
-        candidate = self.candidates.get(db, candidate_id)
+    def generate(self, db: Session, candidate_id: int, user_id: int | None = None):
+        candidate = self.candidates.get_for_user(db, candidate_id, user_id) if user_id is not None else self.candidates.get(db, candidate_id)
         if not candidate:
             raise ValueError("Candidate not found")
 
-        packages = db.query(ApplicationPackage).filter(ApplicationPackage.candidate_id == candidate_id).all()
-        jobs = db.query(JobDescription).all()
+        packages_query = db.query(ApplicationPackage).filter(ApplicationPackage.candidate_id == candidate_id)
+        jobs_query = db.query(JobDescription)
+        if user_id is not None:
+            packages_query = packages_query.filter(ApplicationPackage.user_id == user_id)
+            jobs_query = jobs_query.filter(JobDescription.user_id == user_id)
+        packages = packages_query.all()
+        jobs = jobs_query.all()
         candidate_skills = {str(skill).lower() for skill in (candidate.skills or [])}
         job_skills = self._job_skill_counter(jobs)
         missing_skills = [skill for skill, _ in job_skills.most_common(8) if skill not in candidate_skills]
@@ -43,6 +50,7 @@ class CareerService:
         ats_average = round(sum(ats_scores) / len(ats_scores)) if ats_scores else 0
 
         report = CareerReport(
+            user_id=user_id,
             candidate_id=candidate_id,
             interview_rate=interview_rate,
             ats_average=ats_average,

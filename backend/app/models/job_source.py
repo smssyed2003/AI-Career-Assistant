@@ -24,6 +24,7 @@ class JobSource(Base):
     __tablename__ = "job_sources"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     job_description_id = Column(Integer, ForeignKey("job_descriptions.id"), nullable=False, index=True)
     source = Column(Enum(JobSourceEnum), nullable=False)
     source_job_id = Column(String(256), nullable=True)  # External job ID from source

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+from sqlalchemy import inspect, text
 from app.api import routers
 from app.core.config import settings
 from app.db.session import engine
@@ -12,6 +13,32 @@ data_dir.mkdir(exist_ok=True)
 
 # Create database schema on startup for development
 Base.metadata.create_all(bind=engine)
+
+
+def ensure_dev_schema_columns():
+    if not settings.database_url.startswith("sqlite"):
+        return
+
+    ownership_tables = [
+        "candidates",
+        "job_descriptions",
+        "resumes",
+        "application_packages",
+        "interview_prep",
+        "career_reports",
+        "job_sources",
+    ]
+    inspector = inspect(engine)
+    with engine.begin() as connection:
+        for table in ownership_tables:
+            if table not in inspector.get_table_names():
+                continue
+            columns = {column["name"] for column in inspector.get_columns(table)}
+            if "user_id" not in columns:
+                connection.execute(text(f"ALTER TABLE {table} ADD COLUMN user_id INTEGER"))
+
+
+ensure_dev_schema_columns()
 
 app = FastAPI(
     title="AI Career Agent",
@@ -28,6 +55,7 @@ app.add_middleware(
 )
 
 app.include_router(routers.health.router, prefix="/api")
+app.include_router(routers.auth.router, prefix="/api")
 app.include_router(routers.candidates.router, prefix="/api")
 app.include_router(routers.ingestion.router, prefix="/api")
 app.include_router(routers.jobs.router, prefix="/api")

@@ -29,21 +29,26 @@ class ResumeService:
         ResumeTypeEnum.DATA_SCIENTIST: ["data", "analytics", "machine learning", "statistics", "sql"],
     }
 
-    def list_for_candidate(self, db: Session, candidate_id: int):
+    def list_for_candidate(self, db: Session, candidate_id: int, user_id: int | None = None):
+        query = db.query(Resume).filter(Resume.candidate_id == candidate_id)
+        if user_id is not None:
+            query = query.filter(Resume.user_id == user_id)
         return (
-            db.query(Resume)
-            .filter(Resume.candidate_id == candidate_id)
+            query
             .order_by(Resume.created_at.desc(), Resume.id.desc())
             .all()
         )
 
-    def get(self, db: Session, resume_id: int):
-        return db.query(Resume).filter(Resume.id == resume_id).first()
+    def get(self, db: Session, resume_id: int, user_id: int | None = None):
+        query = db.query(Resume).filter(Resume.id == resume_id)
+        if user_id is not None:
+            query = query.filter(Resume.user_id == user_id)
+        return query.first()
 
-    def create(self, db: Session, candidate_id: int, resume_in: ResumeCreate):
+    def create(self, db: Session, candidate_id: int, resume_in: ResumeCreate, user_id: int | None = None):
         payload = resume_in.model_dump(exclude_none=True)
         payload["resume_type"] = ResumeTypeEnum(payload["resume_type"])
-        resume = Resume(candidate_id=candidate_id, **payload)
+        resume = Resume(candidate_id=candidate_id, user_id=user_id, **payload)
         db.add(resume)
         db.commit()
         db.refresh(resume)
@@ -54,6 +59,7 @@ class ResumeService:
         for resume_type in self.DEFAULT_TYPES:
             content = self.render_resume(candidate, resume_type)
             resume = Resume(
+                user_id=candidate.user_id,
                 candidate_id=candidate.id,
                 resume_type=resume_type,
                 content=content,
@@ -69,6 +75,7 @@ class ResumeService:
     def generate_for_job(self, db: Session, candidate: Candidate, job: JobDescription, ats_score: Optional[int] = None):
         content = self.render_resume(candidate, ResumeTypeEnum.ATS, job=job)
         resume = Resume(
+            user_id=candidate.user_id,
             candidate_id=candidate.id,
             resume_type=ResumeTypeEnum.ATS,
             content=content,

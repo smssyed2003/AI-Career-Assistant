@@ -20,6 +20,7 @@ class ApplicationPackage(Base):
     __tablename__ = "application_packages"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     candidate_id = Column(Integer, ForeignKey("candidates.id"), nullable=False, index=True)
     job_id = Column(Integer, ForeignKey("job_descriptions.id"), nullable=False, index=True)
     

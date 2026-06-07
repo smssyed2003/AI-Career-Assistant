@@ -38,6 +38,7 @@ The Docker Compose file sets:
 
 ```text
 BACKEND_API_URL=http://backend:8000/api
+BACKEND_API_TOKEN=
 ```
 
 For a deployed backend, change this env var to:
@@ -45,6 +46,14 @@ For a deployed backend, change this env var to:
 ```text
 https://your-render-backend.onrender.com/api
 ```
+
+Because the backend now uses authentication, create a user first, login through `/api/auth/login`, and put the returned token in:
+
+```text
+BACKEND_API_TOKEN=<your_access_token>
+```
+
+For production, create a dedicated admin/service user for n8n.
 
 ## Workflows
 

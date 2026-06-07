@@ -14,12 +14,12 @@ class MatchService:
         self.candidate_service = CandidateService()
         self.job_service = JobService()
 
-    def match_candidate(self, db: Session, candidate_id: int, top_k: int = 10) -> List[JobMatch]:
-        candidate = self.candidate_service.get(db, candidate_id)
+    def match_candidate(self, db: Session, candidate_id: int, top_k: int = 10, user_id: int | None = None) -> List[JobMatch]:
+        candidate = self._get_candidate(db, candidate_id, user_id)
         if not candidate:
             return []
 
-        jobs = self.job_service.list(db, skip=0, limit=100)
+        jobs = self.job_service.list(db, skip=0, limit=100, user_id=user_id)
         matches = [self._score_candidate_job(candidate, job) for job in jobs]
         matches = [match for match in matches if match is not None]
         matches.sort(key=lambda item: item.score, reverse=True)
@@ -28,9 +28,9 @@ class MatchService:
     def score_candidate_job(self, candidate: Candidate, job: JobDescription) -> JobMatch:
         return self._score_candidate_job(candidate, job)
 
-    def analyze_skill_gap(self, db: Session, candidate_id: int, job_id: int) -> SkillGapAnalysis:
-        candidate = self.candidate_service.get(db, candidate_id)
-        job = self.job_service.get(db, job_id)
+    def analyze_skill_gap(self, db: Session, candidate_id: int, job_id: int, user_id: int | None = None) -> SkillGapAnalysis:
+        candidate = self._get_candidate(db, candidate_id, user_id)
+        job = self._get_job(db, job_id, user_id)
         if not candidate or not job:
             raise ValueError("Candidate or job not found")
 
@@ -56,9 +56,9 @@ class MatchService:
             score=match.score,
         )
 
-    def analyze_interview_readiness(self, db: Session, candidate_id: int, job_id: int) -> ReadinessAnalysis:
-        candidate = self.candidate_service.get(db, candidate_id)
-        job = self.job_service.get(db, job_id)
+    def analyze_interview_readiness(self, db: Session, candidate_id: int, job_id: int, user_id: int | None = None) -> ReadinessAnalysis:
+        candidate = self._get_candidate(db, candidate_id, user_id)
+        job = self._get_job(db, job_id, user_id)
         if not candidate or not job:
             raise ValueError("Candidate or job not found")
 
@@ -142,6 +142,16 @@ class MatchService:
             missing_skills=missing_skills,
             experience_level=structured.get("experience_level"),
         )
+
+    def _get_candidate(self, db: Session, candidate_id: int, user_id: int | None):
+        if user_id is None:
+            return self.candidate_service.get(db, candidate_id)
+        return self.candidate_service.get_for_user(db, candidate_id, user_id)
+
+    def _get_job(self, db: Session, job_id: int, user_id: int | None):
+        if user_id is None:
+            return self.job_service.get(db, job_id)
+        return self.job_service.get_for_user(db, job_id, user_id)
 
     def _score_location(self, candidate: Candidate, job: JobDescription) -> float:
         location = (job.location or "").lower()

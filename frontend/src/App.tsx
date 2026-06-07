@@ -1,6 +1,19 @@
+import { FormEvent, useEffect, useState } from 'react'
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
+import axios from 'axios'
 import HomePage from './pages/HomePage'
 import MatchPage from './pages/MatchPage'
+
+interface AuthUser {
+  id: number
+  email: string
+  full_name: string
+}
+
+interface TokenResponse {
+  access_token: string
+  user: AuthUser
+}
 
 function Breadcrumbs() {
   const location = useLocation()
@@ -38,6 +51,50 @@ function Breadcrumbs() {
 }
 
 function App() {
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login')
+  const [authForm, setAuthForm] = useState({ full_name: '', email: '', password: '' })
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+  const [authStatus, setAuthStatus] = useState('')
+
+  useEffect(() => {
+    const token = localStorage.getItem('career_agent_token')
+    const user = localStorage.getItem('career_agent_user')
+    if (token) {
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`
+    }
+    if (user) {
+      setAuthUser(JSON.parse(user))
+    }
+  }, [])
+
+  const handleAuthSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    try {
+      setAuthStatus('Authenticating...')
+      const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login'
+      const payload =
+        authMode === 'signup'
+          ? authForm
+          : { email: authForm.email, password: authForm.password }
+      const response = await axios.post<TokenResponse>(endpoint, payload)
+      localStorage.setItem('career_agent_token', response.data.access_token)
+      localStorage.setItem('career_agent_user', JSON.stringify(response.data.user))
+      axios.defaults.headers.common.Authorization = `Bearer ${response.data.access_token}`
+      setAuthUser(response.data.user)
+      setAuthStatus('')
+    } catch (error) {
+      setAuthStatus('Login or signup failed. Check your details and try again.')
+      console.error(error)
+    }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('career_agent_token')
+    localStorage.removeItem('career_agent_user')
+    delete axios.defaults.headers.common.Authorization
+    setAuthUser(null)
+  }
+
   return (
     <BrowserRouter>
       <div className="app-shell">
@@ -56,13 +113,61 @@ function App() {
           </nav>
         </div>
 
+        <div className="auth-bar">
+          {authUser ? (
+            <>
+              <span>{authUser.full_name} ({authUser.email})</span>
+              <button onClick={handleLogout}>Logout</button>
+            </>
+          ) : (
+            <span>Login required for candidate, job, resume, and report data.</span>
+          )}
+        </div>
+
         <Breadcrumbs />
 
         <main>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/match" element={<MatchPage />} />
-          </Routes>
+          {!authUser ? (
+            <section className="panel auth-panel">
+              <h2>{authMode === 'signup' ? 'Create Account' : 'Login'}</h2>
+              <form onSubmit={handleAuthSubmit}>
+                {authMode === 'signup' && (
+                  <label>
+                    Name
+                    <input
+                      value={authForm.full_name}
+                      onChange={(event) => setAuthForm((prev) => ({ ...prev, full_name: event.target.value }))}
+                    />
+                  </label>
+                )}
+                <label>
+                  Email
+                  <input
+                    value={authForm.email}
+                    onChange={(event) => setAuthForm((prev) => ({ ...prev, email: event.target.value }))}
+                  />
+                </label>
+                <label>
+                  Password
+                  <input
+                    type="password"
+                    value={authForm.password}
+                    onChange={(event) => setAuthForm((prev) => ({ ...prev, password: event.target.value }))}
+                  />
+                </label>
+                <button type="submit">{authMode === 'signup' ? 'Sign Up' : 'Login'}</button>
+              </form>
+              <button onClick={() => setAuthMode(authMode === 'signup' ? 'login' : 'signup')}>
+                {authMode === 'signup' ? 'Use Login' : 'Create Account'}
+              </button>
+              {authStatus && <p>{authStatus}</p>}
+            </section>
+          ) : (
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/match" element={<MatchPage />} />
+            </Routes>
+          )}
         </main>
       </div>
     </BrowserRouter>

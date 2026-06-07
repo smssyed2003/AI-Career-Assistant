@@ -8,6 +8,7 @@ class CareerReport(Base):
     __tablename__ = "career_reports"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     candidate_id = Column(Integer, ForeignKey("candidates.id"), nullable=False, index=True)
     interview_rate = Column(Integer, nullable=True)
     ats_average = Column(Integer, nullable=True)

@@ -1,6 +1,8 @@
 from typing import List, Optional
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.schemas.profile import ResumeParseResult
 from app.services.gmail_service import GmailService
 from app.services.llm_service import ProfileExtractor
@@ -11,7 +13,7 @@ parser = ResumeParser()
 extractor = ProfileExtractor()
 
 @router.post("/ingest/resume", response_model=ResumeParseResult, summary="Ingest a resume file and extract profile data")
-async def ingest_resume(file: UploadFile = File(...), source: Optional[str] = None):
+async def ingest_resume(file: UploadFile = File(...), source: Optional[str] = None, current_user: User = Depends(get_current_user)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="Resume file is required")
 
@@ -27,7 +29,7 @@ async def ingest_resume(file: UploadFile = File(...), source: Optional[str] = No
     )
 
 @router.post("/ingest/gmail/sync", response_model=List[ResumeParseResult], summary="Fetch resume attachments from Gmail and parse them")
-def sync_gmail_resumes(query: Optional[str] = "has:attachment"):
+def sync_gmail_resumes(query: Optional[str] = "has:attachment", current_user: User = Depends(get_current_user)):
     gmail = GmailService()
     messages = gmail.fetch_messages(query=query)
     results: List[ResumeParseResult] = []

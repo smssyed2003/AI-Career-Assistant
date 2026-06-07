@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, JSON, DateTime
+from sqlalchemy import Column, ForeignKey, Integer, String, Text, JSON, DateTime
 from sqlalchemy.sql import func
 
 from app.db.base import Base
@@ -8,6 +8,7 @@ class JobDescription(Base):
     __tablename__ = "job_descriptions"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     title = Column(String(256), nullable=False)
     company = Column(String(256), nullable=True)
     location = Column(String(256), nullable=True)

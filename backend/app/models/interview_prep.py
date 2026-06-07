@@ -21,6 +21,7 @@ class InterviewPrep(Base):
     __tablename__ = "interview_prep"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     candidate_id = Column(Integer, ForeignKey("candidates.id"), nullable=False, index=True)
     job_id = Column(Integer, ForeignKey("job_descriptions.id"), nullable=False, index=True)
     application_package_id = Column(Integer, ForeignKey("application_packages.id"), nullable=True)
