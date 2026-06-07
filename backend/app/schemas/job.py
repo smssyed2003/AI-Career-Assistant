@@ -23,6 +23,14 @@ class JobMatch(BaseModel):
     location: Optional[str] = None
     score: float
     skill_match_score: float
+    experience_match_score: float = 0.0
+    project_match_score: float = 0.0
+    location_match_score: float = 0.0
+    salary_match_score: float = 0.0
+    education_match_score: float = 0.0
+    keyword_match_score: float = 0.0
+    overall_label: str = "Needs Review"
+    interview_probability: str = "Low"
     matched_skills: List[str] = Field(default_factory=list)
     missing_skills: List[str] = Field(default_factory=list)
     experience_level: Optional[str] = None

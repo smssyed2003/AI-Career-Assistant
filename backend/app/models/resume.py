@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey, Enum, Index
 from sqlalchemy.sql import func
 from enum import Enum as PyEnum
 
@@ -28,7 +28,6 @@ class Resume(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    # Indexes for efficient querying
     __table_args__ = (
-        ("idx_candidate_type", "candidate_id", "resume_type"),
+        Index("idx_candidate_resume_type", "candidate_id", "resume_type"),
     )

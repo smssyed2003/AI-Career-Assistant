@@ -218,6 +218,19 @@ textarea {
   min-height: 7rem;
 }
 
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0.75rem 0 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #1f2937;
+  background: #020617;
+  color: #dbeafe;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
 select {
   width: 100%;
   padding: 0.85rem;
@@ -292,5 +305,61 @@ button:disabled {
 }
 
 .match-row:last-child {
+  border-bottom: none;
+}
+
+.resume-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #1f2937;
+}
+
+.resume-row:last-child {
+  border-bottom: none;
+}
+
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.score-grid div {
+  padding: 0.85rem;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  background: #0f172a;
+}
+
+.score-grid span {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.score-grid strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.35rem;
+}
+
+.screening-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.screening-list p {
+  margin: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #1f2937;
+}
+
+.screening-list p:last-child {
+  padding-bottom: 0;
   border-bottom: none;
 }

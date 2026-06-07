@@ -21,7 +21,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=settings.cors_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,6 +31,8 @@ app.include_router(routers.health.router, prefix="/api")
 app.include_router(routers.candidates.router, prefix="/api")
 app.include_router(routers.ingestion.router, prefix="/api")
 app.include_router(routers.jobs.router, prefix="/api")
+app.include_router(routers.resumes.router, prefix="/api")
+app.include_router(routers.applications.router, prefix="/api")
 
 @app.get("/", summary="Root endpoint")
 def root():

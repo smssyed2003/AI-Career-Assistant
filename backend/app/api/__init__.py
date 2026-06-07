@@ -1,1 +1,1 @@
-from .routers import health, candidates, jobs
+from . import routers

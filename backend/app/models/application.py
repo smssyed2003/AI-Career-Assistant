@@ -36,7 +36,7 @@ class ApplicationPackage(Base):
     screening_answers = Column(JSON, nullable=True, default=dict)  # Q&A pairs
     
     # Application details
-    status = Column(Enum(ApplicationStatusEnum), default="prepared")
+    status = Column(Enum(ApplicationStatusEnum), default=ApplicationStatusEnum.PREPARED)
     applied_date = Column(DateTime(timezone=True), nullable=True)
     notes = Column(Text, nullable=True)
     

@@ -32,15 +32,21 @@ interface JobMatch {
   company?: string
   score: number
   matched_skills?: string[]
+  overall_label?: string
+  interview_probability?: string
+  skill_match_score?: number
+  experience_match_score?: number
+  project_match_score?: number
+  keyword_match_score?: number
 }
 
 interface SkillGapAnalysis {
   candidate_id: number
   job_id: number
   candidate_skills: string[]
-  job_skills: string[]
+  required_skills: string[]
   missing_skills: string[]
-  extra_skills?: string[]
+  extra_candidate_skills?: string[]
   score: number
 }
 
@@ -54,6 +60,36 @@ interface ReadinessAnalysis {
   recommended_learning: string[]
   matched_skills: string[]
   missing_skills: string[]
+}
+
+interface ResumeRead {
+  id: number
+  candidate_id: number
+  resume_type: string
+  content: string
+  optimized_for_job_id?: number | null
+  ats_score?: number | null
+}
+
+interface ResumeGenerationResult {
+  candidate_id: number
+  generated_count: number
+  resumes: ResumeRead[]
+}
+
+interface ApplicationPackageRead {
+  id: number
+  candidate_id: number
+  job_id: number
+  match_score?: number
+  ats_score?: number
+  interview_probability?: number
+  optimized_resume_id?: number
+  cover_letter?: string
+  hr_introduction?: string
+  email_template?: string
+  screening_answers?: Record<string, string>
+  status: string
 }
 
 function MatchPage() {
@@ -70,6 +106,8 @@ function MatchPage() {
   const [matches, setMatches] = useState<JobMatch[]>([])
   const [skillGap, setSkillGap] = useState<SkillGapAnalysis | null>(null)
   const [readiness, setReadiness] = useState<ReadinessAnalysis | null>(null)
+  const [resumeVersions, setResumeVersions] = useState<ResumeRead[]>([])
+  const [applicationPackage, setApplicationPackage] = useState<ApplicationPackageRead | null>(null)
   const [status, setStatus] = useState('Ready')
   const [statusType, setStatusType] = useState<'info' | 'success' | 'error'>('info')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -85,6 +123,7 @@ function MatchPage() {
     { key: 'matches', label: 'Matches', id: 'matches' },
     { key: 'skill-gap', label: 'Skill Gap Analysis', id: 'skill-gap' },
     { key: 'readiness', label: 'Interview Readiness', id: 'interview-readiness' },
+    { key: 'package', label: 'Application Package', id: 'application-package' },
   ]
 
   const activeSection = searchParams.get('section') || ''
@@ -210,6 +249,8 @@ function MatchPage() {
         skills: saved.skills.join(', '),
       })
       setFieldErrors((prev) => ({ ...prev, full_name: '', email: '', skills: '' }))
+      setResumeVersions([])
+      setApplicationPackage(null)
       setStatusType('success')
       setStatus(`Loaded saved candidate: ${saved.full_name}`)
     } else {
@@ -225,6 +266,7 @@ function MatchPage() {
       setJob(saved)
       setJobText(saved.description)
       setFieldErrors((prev) => ({ ...prev, jobText: '' }))
+      setApplicationPackage(null)
       setStatusType('success')
       setStatus(`Loaded saved job: ${saved.title}`)
     } else {
@@ -257,6 +299,8 @@ function MatchPage() {
       setMatches([])
       setSkillGap(null)
       setReadiness(null)
+      setResumeVersions([])
+      setApplicationPackage(null)
       await loadSavedData()
     } catch (error) {
       setStatusType('error')
@@ -283,6 +327,7 @@ function MatchPage() {
       setStatus('Job ingested successfully')
       setSkillGap(null)
       setReadiness(null)
+      setApplicationPackage(null)
       await loadSavedData()
       if (candidate) {
         fetchMatches(candidate.id)
@@ -347,6 +392,48 @@ function MatchPage() {
     } catch (error) {
       setStatusType('error')
       setStatus('Failed to evaluate readiness')
+      console.error(error)
+    }
+  }
+
+  const handleGenerateResumes = async () => {
+    if (!candidate) {
+      setStatusType('error')
+      setStatus('Create or select a candidate before generating resume versions')
+      return
+    }
+
+    try {
+      setStatusType('info')
+      setStatus('Generating resume versions...')
+      const response = await axios.post<ResumeGenerationResult>(`/api/candidates/${candidate.id}/resumes/generate`)
+      setResumeVersions(response.data.resumes)
+      setStatusType('success')
+      setStatus(`Generated ${response.data.generated_count} resume versions`)
+    } catch (error) {
+      setStatusType('error')
+      setStatus('Failed to generate resume versions')
+      console.error(error)
+    }
+  }
+
+  const handlePrepareApplicationPackage = async () => {
+    if (!candidate || !job) {
+      setStatusType('error')
+      setStatus('Candidate and job are required to prepare an application package')
+      return
+    }
+
+    try {
+      setStatusType('info')
+      setStatus('Preparing application package...')
+      const response = await axios.post<ApplicationPackageRead>(`/api/jobs/${job.id}/application-package/${candidate.id}`)
+      setApplicationPackage(response.data)
+      setStatusType('success')
+      setStatus('Application package prepared for review')
+    } catch (error) {
+      setStatusType('error')
+      setStatus('Failed to prepare application package')
       console.error(error)
     }
   }
@@ -453,6 +540,9 @@ function MatchPage() {
         <button disabled={!isCandidateFormValid} onClick={handleCreateCandidate}>
           Create Candidate
         </button>
+        <button disabled={!candidate} onClick={handleGenerateResumes}>
+          Generate Resume Versions
+        </button>
         {candidate && (
           <div className="result-card">
             <h3>Candidate saved</h3>
@@ -460,6 +550,19 @@ function MatchPage() {
               {candidate.full_name} • {candidate.email}
             </p>
             <p>Skills: {candidate.skills.join(', ')}</p>
+          </div>
+        )}
+        {resumeVersions.length > 0 && (
+          <div className="list-card">
+            {resumeVersions.map((resume) => (
+              <div key={resume.id} className="resume-row">
+                <div>
+                  <strong>{resume.resume_type.replace('_', ' ')}</strong>
+                  <div>ATS score: {resume.ats_score ?? 'Pending'}</div>
+                </div>
+                <span>Version #{resume.id}</span>
+              </div>
+            ))}
           </div>
         )}
       </section>
@@ -519,6 +622,7 @@ function MatchPage() {
                 <div>
                   <strong>{match.title}</strong>
                   <div>{match.company || 'Company unknown'}</div>
+                  <div>{match.overall_label || 'Match scored'} - Interview: {match.interview_probability || 'Pending'}</div>
                 </div>
                 <div>{(match.score * 100).toFixed(0)}%</div>
               </div>
@@ -540,7 +644,7 @@ function MatchPage() {
               Candidate skills: <strong>{skillGap.candidate_skills.join(', ')}</strong>
             </p>
             <p>
-              Job skills: <strong>{skillGap.job_skills.join(', ')}</strong>
+              Job skills: <strong>{skillGap.required_skills.join(', ')}</strong>
             </p>
             <p>
               Missing skills: <strong>{skillGap.missing_skills.join(', ') || 'None'}</strong>
@@ -581,6 +685,58 @@ function MatchPage() {
           </div>
         ) : (
           <p>Evaluate readiness after ingesting a job and creating a candidate.</p>
+        )}
+      </section>
+
+      <section id="application-package" className="panel">
+        <div className="panel-heading">
+          <h3>Application Package</h3>
+          <button disabled={!candidate || !job} onClick={handlePrepareApplicationPackage}>
+            Prepare Package
+          </button>
+        </div>
+        {applicationPackage ? (
+          <div className="result-card">
+            <div className="score-grid">
+              <div>
+                <span>Match</span>
+                <strong>{applicationPackage.match_score ?? 0}%</strong>
+              </div>
+              <div>
+                <span>ATS</span>
+                <strong>{applicationPackage.ats_score ?? 0}%</strong>
+              </div>
+              <div>
+                <span>Interview</span>
+                <strong>{applicationPackage.interview_probability ?? 0}%</strong>
+              </div>
+            </div>
+            <p>
+              Optimized resume version: <strong>#{applicationPackage.optimized_resume_id}</strong>
+            </p>
+            <h4>HR Introduction</h4>
+            <p>{applicationPackage.hr_introduction}</p>
+            <h4>Cover Letter</h4>
+            <pre>{applicationPackage.cover_letter}</pre>
+            <h4>Email Template</h4>
+            <pre>{applicationPackage.email_template}</pre>
+            {applicationPackage.screening_answers && (
+              <>
+                <h4>Screening Answers</h4>
+                <div className="screening-list">
+                  {Object.entries(applicationPackage.screening_answers).map(([question, answer]) => (
+                    <p key={question}>
+                      <strong>{question}</strong>
+                      <br />
+                      {answer}
+                    </p>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <p>Prepare a review-ready package after selecting a candidate and job.</p>
         )}
       </section>
     </div>
