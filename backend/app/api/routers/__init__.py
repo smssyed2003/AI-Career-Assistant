@@ -1,1 +1,1 @@
-from . import applications, auth, candidates, career, discovery, health, ingestion, interviews, jobs, resumes
+from . import admin, applications, auth, candidates, career, dashboard, discovery, health, ingestion, interviews, jobs, resumes

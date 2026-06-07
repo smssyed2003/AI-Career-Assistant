@@ -34,6 +34,28 @@ class ApplicationService:
             query = query.filter(ApplicationPackage.user_id == user_id)
         return query.first()
 
+    def update_tracking(
+        self,
+        db: Session,
+        package_id: int,
+        user_id: int,
+        status: ApplicationStatusEnum | None = None,
+        notes: str | None = None,
+        applied_date=None,
+    ):
+        package = self.get(db, package_id, user_id=user_id)
+        if not package:
+            return None
+        if status is not None:
+            package.status = status
+        if notes is not None:
+            package.notes = notes
+        if applied_date is not None:
+            package.applied_date = applied_date
+        db.commit()
+        db.refresh(package)
+        return package
+
     def prepare(self, db: Session, candidate_id: int, job_id: int, user_id: int | None = None):
         candidate = self.candidates.get_for_user(db, candidate_id, user_id) if user_id is not None else self.candidates.get(db, candidate_id)
         job = self.jobs.get_for_user(db, job_id, user_id) if user_id is not None else self.jobs.get(db, job_id)

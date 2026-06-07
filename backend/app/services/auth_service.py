@@ -19,13 +19,36 @@ class AuthService:
     def get(self, db: Session, user_id: int):
         return db.query(User).filter(User.id == user_id).first()
 
+    def list_users(self, db: Session, skip: int = 0, limit: int = 100):
+        return db.query(User).order_by(User.created_at.desc(), User.id.desc()).offset(skip).limit(limit).all()
+
     def create_user(self, db: Session, user_in: UserCreate):
+        role = "admin" if db.query(User).count() == 0 else "user"
         user = User(
             email=user_in.email.lower(),
             full_name=user_in.full_name,
             hashed_password=self.hash_password(user_in.password),
+            role=role,
         )
         db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    def update_role(self, db: Session, user_id: int, role: str):
+        user = self.get(db, user_id)
+        if not user:
+            return None
+        user.role = role
+        db.commit()
+        db.refresh(user)
+        return user
+
+    def update_status(self, db: Session, user_id: int, is_active: bool):
+        user = self.get(db, user_id)
+        if not user:
+            return None
+        user.is_active = is_active
         db.commit()
         db.refresh(user)
         return user
@@ -58,6 +81,7 @@ class AuthService:
         payload = {
             "sub": str(user.id),
             "email": user.email,
+            "role": user.role,
             "iat": int(now.timestamp()),
             "exp": int((now + timedelta(minutes=settings.auth_token_expire_minutes)).timestamp()),
         }

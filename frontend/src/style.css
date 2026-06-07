@@ -15,7 +15,7 @@ body {
 }
 
 .app-shell {
-  max-width: 960px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -306,6 +306,22 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.25rem;
+  border-radius: 0.75rem;
+  background: #2563eb;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.button-link.secondary {
+  background: #1f2937;
+  border: 1px solid #334155;
+}
+
 .result-card,
 .list-card,
 .gap-card,
@@ -369,6 +385,92 @@ button:disabled {
   font-size: 1.35rem;
 }
 
+.metric-grid,
+.pipeline-grid,
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.metric-card,
+.pipeline-item,
+.health-grid div {
+  padding: 1rem;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  background: #0b1120;
+}
+
+.metric-card span,
+.pipeline-item span,
+.health-grid span {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.88rem;
+}
+
+.metric-card strong,
+.pipeline-item strong,
+.health-grid strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: #ffffff;
+  font-size: 1.45rem;
+  text-transform: capitalize;
+}
+
+.action-list {
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+  color: #dbeafe;
+}
+
+.tracker-list,
+.settings-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.tracker-row,
+.setting-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(180px, 0.8fr) minmax(220px, 1fr);
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem;
+  border: 1px solid #334155;
+  border-radius: 0.75rem;
+  background: #0b1120;
+}
+
+.tracker-main,
+.tracker-scores,
+.tracker-controls,
+.setting-row > div {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tracker-main span,
+.tracker-scores span,
+.setting-row span,
+.setting-row p {
+  color: #cbd5e1;
+}
+
+.tracker-controls button,
+.setting-row button {
+  margin-top: 0;
+}
+
+.tracker-controls textarea,
+.setting-row textarea {
+  min-height: 5rem;
+}
+
 .screening-list {
   display: grid;
   gap: 0.75rem;
@@ -406,4 +508,57 @@ button:disabled {
 .prep-row span {
   color: #93c5fd;
   text-transform: capitalize;
+}
+
+.admin-user-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #1f2937;
+}
+
+.admin-user-row:last-child {
+  border-bottom: none;
+}
+
+.admin-user-row p {
+  margin: 0.25rem 0 0;
+  color: #cbd5e1;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.admin-actions select,
+.admin-actions button {
+  margin-top: 0;
+  min-width: 120px;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: 1rem;
+  }
+
+  .panel-heading,
+  .admin-user-row,
+  .tracker-row,
+  .setting-row {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-actions {
+    justify-content: stretch;
+  }
 }

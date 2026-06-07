@@ -37,3 +37,9 @@ class ApplicationPackageRead(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ApplicationPackageUpdate(BaseModel):
+    status: Optional[ApplicationStatus] = None
+    applied_date: Optional[datetime] = None
+    notes: Optional[str] = Field(default=None, max_length=4000)

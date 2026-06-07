@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
+from app.models.application import ApplicationStatusEnum
 from app.models.user import User
-from app.schemas.application import ApplicationPackageRead
+from app.schemas.application import ApplicationPackageRead, ApplicationPackageUpdate
 from app.services.application_service import ApplicationService
 
 router = APIRouter()
@@ -26,6 +27,26 @@ def list_application_packages(
 @router.get("/application-packages/{package_id}", response_model=ApplicationPackageRead, summary="Get an application package")
 def get_application_package(package_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     package = service.get(db, package_id, user_id=current_user.id)
+    if not package:
+        raise HTTPException(status_code=404, detail="Application package not found")
+    return package
+
+
+@router.patch("/application-packages/{package_id}", response_model=ApplicationPackageRead, summary="Update application tracking status")
+def update_application_package(
+    package_id: int,
+    payload: ApplicationPackageUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    package = service.update_tracking(
+        db,
+        package_id=package_id,
+        user_id=current_user.id,
+        status=ApplicationStatusEnum(payload.status.value) if payload.status else None,
+        notes=payload.notes,
+        applied_date=payload.applied_date,
+    )
     if not package:
         raise HTTPException(status_code=404, detail="Application package not found")
     return package

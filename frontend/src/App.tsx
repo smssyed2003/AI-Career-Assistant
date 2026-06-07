@@ -1,13 +1,16 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
-import HomePage from './pages/HomePage'
+import CandidateDashboardPage from './pages/CandidateDashboardPage'
 import MatchPage from './pages/MatchPage'
+import AdminPage from './pages/AdminPage'
+import ApplicationTrackerPage from './pages/ApplicationTrackerPage'
 
 interface AuthUser {
   id: number
   email: string
   full_name: string
+  role: string
 }
 
 interface TokenResponse {
@@ -105,11 +108,19 @@ function App() {
 
           <nav className="main-nav">
             <NavLink to="/" className={({ isActive }) => (isActive ? 'nav-link active-link' : 'nav-link')}>
-              Home
+              Dashboard
             </NavLink>
             <NavLink to="/match" className={({ isActive }) => (isActive ? 'nav-link active-link' : 'nav-link')}>
               Job Matching
             </NavLink>
+            <NavLink to="/applications" className={({ isActive }) => (isActive ? 'nav-link active-link' : 'nav-link')}>
+              Applications
+            </NavLink>
+            {authUser?.role === 'admin' && (
+              <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-link active-link' : 'nav-link')}>
+                Admin
+              </NavLink>
+            )}
           </nav>
         </div>
 
@@ -164,8 +175,10 @@ function App() {
             </section>
           ) : (
             <Routes>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<CandidateDashboardPage />} />
               <Route path="/match" element={<MatchPage />} />
+              <Route path="/applications" element={<ApplicationTrackerPage />} />
+              {authUser.role === 'admin' && <Route path="/admin" element={<AdminPage />} />}
             </Routes>
           )}
         </main>

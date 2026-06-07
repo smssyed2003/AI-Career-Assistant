@@ -30,6 +30,11 @@ def ensure_dev_schema_columns():
     ]
     inspector = inspect(engine)
     with engine.begin() as connection:
+        if "users" in inspector.get_table_names():
+            user_columns = {column["name"] for column in inspector.get_columns("users")}
+            if "role" not in user_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(32) NOT NULL DEFAULT 'user'"))
+
         for table in ownership_tables:
             if table not in inspector.get_table_names():
                 continue
@@ -56,6 +61,8 @@ app.add_middleware(
 
 app.include_router(routers.health.router, prefix="/api")
 app.include_router(routers.auth.router, prefix="/api")
+app.include_router(routers.admin.router, prefix="/api")
+app.include_router(routers.dashboard.router, prefix="/api")
 app.include_router(routers.candidates.router, prefix="/api")
 app.include_router(routers.ingestion.router, prefix="/api")
 app.include_router(routers.jobs.router, prefix="/api")

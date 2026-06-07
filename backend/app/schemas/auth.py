@@ -18,10 +18,23 @@ class UserRead(BaseModel):
     id: int
     email: EmailStr
     full_name: str
+    role: str = "user"
     is_active: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserAdminRead(UserRead):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserRoleUpdate(BaseModel):
+    role: str = Field(pattern="^(admin|user)$")
+
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool
 
 
 class TokenResponse(BaseModel):
